@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sul Sign · Insumos</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --primary: #1a1a2e;
+    --accent: #e94560;
+    --bg: #f4f6f9;
+    --card: #ffffff;
+    --text: #2d3748;
+    --muted: #718096;
+    --border: #e2e8f0;
+    --success: #38a169;
+    --warning: #d69e2e;
+    --router: #3182ce;
+    --laser: #e53e3e;
+    --impressao: #805ad5;
+    --recorte: #dd6b20;
+    --dobrador: #319795;
+    --acabamento: #718096;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* HEADER */
+  .header {
+    background: var(--primary);
+    color: white;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .header-logo { font-size: 18px; font-weight: 700; letter-spacing: 1px; }
+  .header-logo span { color: var(--accent); }
+  .header-user { font-size: 13px; color: #a0aec0; display: flex; align-items: center; gap: 8px; }
+  .role-badge {
+    font-size: 11px; font-weight: 600; padding: 2px 8px;
+    border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .role-gerente { background: #2d6a4f; color: #b7e4c7; }
+  .role-operador { background: #1d4e89; color: #bdd7f5; }
+  .role-programador { background: #6b2d8b; color: #e0c3f7; }
+
+  /* NAV TABS */
+  .nav-tabs {
+    display: flex;
+    background: var(--primary);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding: 0 24px;
+    gap: 4px;
+  }
+  .nav-tab {
+    color: #a0aec0; font-size: 13px; font-weight: 500;
+    padding: 10px 16px; cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .nav-tab:hover { color: white; }
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* MAIN */
+  .main { max-width: 960px; margin: 0 auto; padding: 24px 16px; }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-size: 20px; font-weight: 700; color: var(--primary);
+    margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
+  }
+  .section-title .icon { font-size: 22px; }
+
+  /* CARDS */
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+
+  /* SEARCH BAR */
+  .search-bar {
+    display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .search-bar input, .search-bar select {
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 14px; font-size: 14px; background: white;
+    outline: none; transition: border 0.2s;
+  }
+  .search-bar input:focus, .search-bar select:focus { border-color: var(--accent); }
+  .search-bar input { flex: 1; min-width: 200px; }
+
+  /* OS CARD */
+  .os-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 10px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .os-card:hover { border-color: var(--accent); box-shadow: 0 2px 8px rgba(233,69,96,0.15); }
+  .os-card.selected { border-color: var(--accent); background: #fff5f7; }
+  .os-num { font-size: 15px; font-weight: 700; color: var(--primary); }
+  .os-cliente { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .os-produto { font-size: 13px; color: var(--text); }
+  .os-status {
+    font-size: 11px; font-weight: 600; padding: 3px 10px;
+    border-radius: 10px; white-space: nowrap;
+  }
+  .status-em-producao { background: #ebf8ff; color: #2b6cb0; }
+  .status-concluido { background: #f0fff4; color: #276749; }
+  .status-entregue { background: #f7fafc; color: #718096; }
+
+  /* MÁQUINAS TAGS */
+  .maquinas-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .maquina-tag {
+    font-size: 11px; font-weight: 600; padding: 2px 8px;
+    border-radius: 6px; text-transform: uppercase;
+  }
+  .tag-ROUTER { background: #ebf8ff; color: var(--router); }
+  .tag-LASER { background: #fff5f5; color: var(--laser); }
+  .tag-IMPRESSAO { background: #faf5ff; color: var(--impressao); }
+  .tag-RECORTE { background: #fffaf0; color: var(--recorte); }
+  .tag-DOBRADOR { background: #e6fffa; color: var(--dobrador); }
+  .tag-ACABAMENTO { background: #f7fafc; color: var(--acabamento); }
+
+  /* OS DETAIL */
+  .os-detail {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+  }
+  .os-detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .detail-item label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .detail-item span { font-size: 14px; font-weight: 500; color: var(--text); display: block; margin-top: 2px; }
+
+  /* FORM INSUMO */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; }
+  .form-group input, .form-group select, .form-group textarea {
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; font-size: 14px; outline: none;
+    transition: border 0.2s; background: white;
+  }
+  .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+  .form-group textarea { resize: vertical; min-height: 70px; }
+  .form-group .hint { font-size: 11px; color: var(--muted); }
+
+  /* BOTÕES */
+  .btn {
+    padding: 10px 20px; border-radius: 8px; font-size: 14px;
+    font-weight: 600; cursor: pointer; border: none;
+    transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #c73652; }
+  .btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: #e2e8f0; }
+  .btn-success { background: var(--success); color: white; }
+  .btn-success:hover { background: #276749; }
+  .btn-danger { background: #e53e3e; color: white; }
+  .btn-danger:hover { background: #c53030; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* TABELA INSUMOS LANÇADOS */
+  .table-wrapper { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #f7fafc; color: var(--muted); font-size: 11px; text-transform: uppercase;
+       letter-spacing: 0.5px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafafa; }
+  .total-row td { font-weight: 700; background: #f7fafc; border-top: 2px solid var(--border); }
+
+  /* CATÁLOGO */
+  .catalogo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .catalogo-item {
+    background: white; border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px; transition: all 0.2s;
+  }
+  .catalogo-item:hover { border-color: var(--accent); box-shadow: 0 2px 8px rgba(233,69,96,0.1); }
+  .catalogo-item.inativo { opacity: 0.5; }
+  .cat-nome { font-size: 14px; font-weight: 600; color: var(--text); }
+  .cat-info { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .cat-custo { font-size: 15px; font-weight: 700; color: var(--primary); margin-top: 8px; }
+  .cat-actions { display: flex; gap: 6px; margin-top: 10px; }
+  .categoria-badge {
+    display: inline-block; font-size: 10px; font-weight: 600;
+    padding: 2px 7px; border-radius: 6px; text-transform: uppercase; margin-top: 4px;
+  }
+  .cat-chapa { background: #e6f3ff; color: #2b6cb0; }
+  .cat-vinil { background: #fef9e7; color: #d69e2e; }
+  .cat-perfil { background: #e8f5e9; color: #2d6a4f; }
+  .cat-led { background: #fff9e6; color: #c05621; }
+  .cat-outros { background: #f0f0f0; color: #4a5568; }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 1000;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white; border-radius: 14px; padding: 28px;
+    max-width: 480px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; color: var(--primary); }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+
+  /* CUSTO PREVIEW */
+  .custo-preview {
+    background: #f0fff4; border: 1px solid #9ae6b4;
+    border-radius: 8px; padding: 10px 14px;
+    font-size: 14px; color: var(--success); font-weight: 600;
+    margin-top: 8px; display: none;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+    background: #2d3748; color: white; padding: 12px 20px;
+    border-radius: 10px; font-size: 14px; font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transform: translateY(80px); opacity: 0; transition: all 0.3s;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { background: var(--success); }
+  .toast.error { background: #e53e3e; }
+
+  /* EMPTY STATE */
+  .empty-state { text-align: center; padding: 48px 24px; color: var(--muted); }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 15px; }
+
+  /* RESUMO CUSTO */
+  .custo-resumo {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px; margin-bottom: 20px;
+  }
+  .custo-box {
+    background: white; border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px; text-align: center;
+  }
+  .custo-box .label { font-size: 11px; color: var(--muted); text-transform: uppercase; }
+  .custo-box .value { font-size: 22px; font-weight: 700; color: var(--primary); margin-top: 4px; }
+  .custo-box .value.accent { color: var(--accent); }
+  .custo-box .value.success { color: var(--success); }
+
+  /* FILTER PILLS */
+  .filter-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .pill {
+    padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;
+    cursor: pointer; border: 1px solid var(--border); background: white;
+    transition: all 0.2s;
+  }
+  .pill:hover, .pill.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+  /* HIDDEN */
+  .hidden { display: none !important; }
+
+  /* LOADING */
+  .spinner {
+    width: 20px; height: 20px; border: 2px solid #f3f3f3;
+    border-top: 2px solid var(--accent); border-radius: 50%;
+    animation: spin 0.8s linear infinite; display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">SUL <span>SIGN</span> · OS</div>
+  <div class="header-user">
+    <span id="headerNome">Carregando...</span>
+    <span class="role-badge" id="headerRole"></span>
+  </div>
+</div>
+
+<div class="nav-tabs" id="navTabs">
+  <div class="nav-tab active" onclick="showTab('lancamento')" id="tab-lancamento">📦 Lançar Insumos</div>
+  <div class="nav-tab" onclick="showTab('catalogo')" id="tab-catalogo" id="tabCatalogo">🗂️ Catálogo</div>
+</div>
+
+<!-- ================================================ -->
+<!-- TAB: LANÇAMENTO DE INSUMOS -->
+<!-- ================================================ -->
+<div class="main" id="page-lancamento">
+
+  <div class="section-title"><span class="icon">📦</span> Lançar Insumos por OS</div>
+
+  <!-- STEP 1: Buscar OS -->
+  <div class="card" id="stepBusca">
+    <div style="font-size:14px; font-weight:600; color:var(--muted); margin-bottom:12px;">
+      PASSO 1 — Selecione a Ordem de Serviço
+    </div>
+    <div class="search-bar">
+      <input type="text" id="buscaOS" placeholder="Buscar por número ou cliente..." oninput="filtrarOS()">
+      <select id="filtroBuscaStatus" onchange="filtrarOS()">
+        <option value="">Todos os status</option>
+        <option value="Em Produção" selected>Em Produção</option>
+        <option value="Concluído">Concluído</option>
+      </select>
+    </div>
+    <div id="listaOS">
+      <div class="empty-state"><div class="icon">⏳</div><p>Carregando ordens de serviço...</p></div>
+    </div>
+  </div>
+
+  <!-- STEP 2: Detalhes da OS + Formulário -->
+  <div id="stepLancamento" class="hidden">
+
+    <!-- Resumo da OS selecionada -->
+    <div class="os-detail" id="osDetalhe"></div>
+
+    <!-- Resumo de custos -->
+    <div class="custo-resumo" id="custoResumo">
+      <div class="custo-box">
+        <div class="label">Valor OS</div>
+        <div class="value" id="resumoValorOS">R$ —</div>
+      </div>
+      <div class="custo-box">
+        <div class="label">Custo Insumos</div>
+        <div class="value accent" id="resumoCustoInsumos">R$ 0,00</div>
+      </div>
+      <div class="custo-box">
+        <div class="label">Itens Lançados</div>
+        <div class="value" id="resumoQtdInsumos">0</div>
+      </div>
+      <div class="custo-box">
+        <div class="label">Margem Bruta</div>
+        <div class="value success" id="resumoMargem">—</div>
+      </div>
+    </div>
+
+    <!-- Formulário de lançamento -->
+    <div class="card">
+      <div style="font-size:14px; font-weight:600; color:var(--muted); margin-bottom:16px;">
+        PASSO 2 — Adicionar Insumo Utilizado
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Insumo *</label>
+          <select id="insumoSel" onchange="preencherUnidade()">
+            <option value="">Selecione o insumo...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Máquina Utilizada *</label>
+          <select id="maquinaSel">
+            <option value="">Selecione a máquina...</option>
+            <option value="ROUTER">ROUTER CNC</option>
+            <option value="LASER">LASER 150W</option>
+            <option value="IMPRESSAO">IMPRESSÃO / ROLAND</option>
+            <option value="RECORTE">RECORTE ELETRÔNICO</option>
+            <option value="DOBRADOR">DOBRADORA CNC</option>
+            <option value="ACABAMENTO">ACABAMENTO / PINTURA</option>
+            <option value="MANUAL">MANUAL (sem máquina)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Quantidade *</label>
+          <input type="number" id="qtdInput" step="0.001" min="0.001" placeholder="0.000"
+                 oninput="calcularCusto()">
+          <span class="hint" id="unidadeHint">—</span>
+        </div>
+        <div class="form-group">
+          <label>Custo Unitário (R$)</label>
+          <input type="number" id="custoInput" step="0.01" min="0" placeholder="0,00"
+                 oninput="calcularCusto()">
+          <span class="hint">Preenchido automaticamente do catálogo</span>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:12px;">
+        <label>Observação (opcional)</label>
+        <textarea id="obsInput" placeholder="Ex: 2 chapas usadas, sobrou 0.3m² · peça com curvatura especial..."></textarea>
+      </div>
+      <div class="custo-preview" id="custoPreview"></div>
+      <div style="display:flex; gap:10px; margin-top:16px;">
+        <button class="btn btn-primary" onclick="lancarInsumo()" id="btnLancar">
+          ➕ Adicionar Insumo
+        </button>
+        <button class="btn btn-secondary" onclick="voltarBusca()">← Trocar OS</button>
+      </div>
+    </div>
+
+    <!-- Tabela de insumos lançados -->
+    <div class="card">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+        <div style="font-size:14px; font-weight:600; color:var(--muted);">INSUMOS LANÇADOS NESTA OS</div>
+        <button class="btn btn-secondary btn-sm" onclick="carregarInsumosOS()">🔄 Atualizar</button>
+      </div>
+      <div id="tabelaInsumosOS">
+        <div class="empty-state"><div class="icon">📋</div><p>Nenhum insumo lançado ainda.</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================ -->
+<!-- TAB: CATÁLOGO DE INSUMOS (apenas gerente) -->
+<!-- ================================================ -->
+<div class="main hidden" id="page-catalogo">
+
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+    <div class="section-title" style="margin-bottom:0;"><span class="icon">🗂️</span> Catálogo de Insumos</div>
+    <button class="btn btn-primary" onclick="abrirModalInsumo()">➕ Novo Insumo</button>
+  </div>
+
+  <div class="search-bar">
+    <input type="text" id="buscaCatalogo" placeholder="Buscar insumo..." oninput="filtrarCatalogo()">
+    <select id="filtroCategoria" onchange="filtrarCatalogo()">
+      <option value="">Todas as categorias</option>
+      <option value="chapa">Chapa</option>
+      <option value="vinil">Vinil / Impressão</option>
+      <option value="perfil">Perfil / Estrutura</option>
+      <option value="led">LED / Elétrica</option>
+      <option value="outros">Outros</option>
+    </select>
+  </div>
+
+  <div class="filter-pills">
+    <span class="pill active" onclick="filtrarAtivo(this, null)">Todos</span>
+    <span class="pill" onclick="filtrarAtivo(this, true)">✅ Ativos</span>
+    <span class="pill" onclick="filtrarAtivo(this, false)">⛔ Inativos</span>
+  </div>
+
+  <div class="catalogo-grid" id="catalogoGrid">
+    <div class="empty-state"><div class="icon">⏳</div><p>Carregando catálogo...</p></div>
+  </div>
+</div>
+
+<!-- MODAL: Criar/Editar Insumo -->
+<div class="modal-overlay" id="modalInsumo">
+  <div class="modal">
+    <div class="modal-title" id="modalTitulo">Novo Insumo</div>
+    <div class="form-grid">
+      <div class="form-group" style="grid-column:1/-1;">
+        <label>Nome do Insumo *</label>
+        <input type="text" id="mNome" placeholder="Ex: Chapa ACM 3mm Branco">
+      </div>
+      <div class="form-group">
+        <label>Categoria *</label>
+        <select id="mCategoria">
+          <option value="chapa">Chapa</option>
+          <option value="vinil">Vinil / Impressão</option>
+          <option value="perfil">Perfil / Estrutura</option>
+          <option value="led">LED / Elétrica</option>
+          <option value="outros">Outros</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Unidade *</label>
+        <select id="mUnidade">
+          <option value="m²">m²</option>
+          <option value="ml">ml (metro linear)</option>
+          <option value="unid">unid</option>
+          <option value="kg">kg</option>
+          <option value="rolo">rolo</option>
+          <option value="folha">folha</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Custo Unitário (R$)</label>
+        <input type="number" id="mCusto" step="0.01" min="0" placeholder="0,00">
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="mAtivo">
+          <option value="true">✅ Ativo</option>
+          <option value="false">⛔ Inativo</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarInsumo()" id="btnSalvarModal">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ================================================
+// CONFIGURAÇÃO SUPABASE — substitua pelas suas credenciais
+// ================================================
+const SUPABASE_URL = 'https://obeamqkcuytctfczhook.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iZWFtcWtjdXl0Y3RmY3pob29rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMDIxOTQsImV4cCI6MjA4ODU3ODE5NH0.zk88W0HUIYkp8toTsJIXFHf6IGPRPs4hKz8kT3I5QVY';
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ================================================
+// ESTADO GLOBAL
+// ================================================
+let currentUser = null;
+let currentRole = null;
+let todasOS = [];
+let todosInsumos = [];
+let osSelecionada = null;
+let editandoInsumoId = null;
+let filtroAtivo = null;
+
+// ================================================
+// INIT
+// ================================================
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { window.location.href = 'index.html'; return; }
+
+  const { data: profile } = await sb.from('profiles')
+    .select('nome, role').eq('id', session.user.id).single();
+
+  currentUser = session.user;
+  currentRole = profile?.role || 'operador';
+
+  document.getElementById('headerNome').textContent = profile?.nome || session.user.email;
+  const badge = document.getElementById('headerRole');
+  badge.textContent = currentRole;
+  badge.className = `role-badge role-${currentRole}`;
+
+  // Catálogo visível só para gerente/programador
+  if (currentRole === 'operador') {
+    document.getElementById('tab-catalogo').classList.add('hidden');
+  }
+
+  await carregarInsumosCatalogo();
+  await carregarTodasOS();
+  preencherSelectInsumos();
+}
+
+// ================================================
+// TABS
+// ================================================
+function showTab(tab) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.main').forEach(p => p.classList.add('hidden'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  document.getElementById(`page-${tab}`).classList.remove('hidden');
+  if (tab === 'catalogo') renderCatalogo(todosInsumos);
+}
+
+// ================================================
+// CARREGAR OS
+// ================================================
+async function carregarTodasOS() {
+  const { data, error } = await sb.from('ordens_servico')
+    .select('id, num, status, cliente_nome, produto, material, maquinas, valor_total, prazo')
+    .in('status', ['Em Produção', 'Concluído', 'Orçamento'])
+    .order('num', { ascending: false });
+
+  if (error) { showToast('Erro ao carregar OS', 'error'); return; }
+  todasOS = data || [];
+  filtrarOS();
+}
+
+function filtrarOS() {
+  const busca = document.getElementById('buscaOS').value.toLowerCase();
+  const status = document.getElementById('filtroBuscaStatus').value;
+  const filtradas = todasOS.filter(os => {
+    const matchBusca = !busca ||
+      os.num?.toLowerCase().includes(busca) ||
+      os.cliente_nome?.toLowerCase().includes(busca) ||
+      os.produto?.toLowerCase().includes(busca);
+    const matchStatus = !status || os.status === status;
+    return matchBusca && matchStatus;
+  });
+  renderListaOS(filtradas);
+}
+
+function renderListaOS(lista) {
+  const el = document.getElementById('listaOS');
+  if (!lista.length) {
+    el.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><p>Nenhuma OS encontrada.</p></div>`;
+    return;
+  }
+  el.innerHTML = lista.map(os => {
+    const maquinas = (os.maquinas || []).map(m =>
+      `<span class="maquina-tag tag-${m}">${m}</span>`).join('');
+    const statusClass = os.status === 'Em Produção' ? 'status-em-producao' :
+                        os.status === 'Concluído' ? 'status-concluido' : 'status-entregue';
+    const prazo = os.prazo ? new Date(os.prazo + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+    return `
+      <div class="os-card" onclick="selecionarOS('${os.id}')">
+        <div>
+          <div class="os-num">${os.num}</div>
+          <div class="os-cliente">${os.cliente_nome || '—'} · Prazo: ${prazo}</div>
+          <div class="os-produto">${os.produto || '—'}${os.material ? ' · ' + os.material : ''}</div>
+          <div class="maquinas-row">${maquinas}</div>
+        </div>
+        <div>
+          <span class="os-status ${statusClass}">${os.status}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function selecionarOS(osId) {
+  const { data: os } = await sb.from('ordens_servico')
+    .select('*').eq('id', osId).single();
+  osSelecionada = os;
+
+  // Renderizar detalhe
+  const prazo = os.prazo ? new Date(os.prazo + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+  const maquinas = (os.maquinas || []).map(m =>
+    `<span class="maquina-tag tag-${m}">${m}</span>`).join('') || '—';
+  document.getElementById('osDetalhe').innerHTML = `
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+      <div>
+        <div style="font-size:18px; font-weight:700; color:var(--primary);">${os.num}</div>
+        <div style="font-size:14px; color:var(--muted);">${os.cliente_nome || '—'}</div>
+      </div>
+      <span class="os-status status-em-producao">${os.status}</span>
+    </div>
+    <div class="os-detail-grid">
+      <div class="detail-item"><label>Produto</label><span>${os.produto || '—'}</span></div>
+      <div class="detail-item"><label>Material</label><span>${os.material || '—'}</span></div>
+      <div class="detail-item"><label>Dimensões</label><span>${os.dim_h || '—'} × ${os.dim_l || '—'} × ${os.dim_p || '—'} cm</span></div>
+      <div class="detail-item"><label>Prazo</label><span>${prazo}</span></div>
+      <div class="detail-item"><label>Cor</label><span>${os.cor || '—'}</span></div>
+      <div class="detail-item"><label>Iluminação</label><span>${os.iluminacao || '—'}</span></div>
+    </div>
+    <div style="margin-top:10px;"><label style="font-size:11px;color:var(--muted);text-transform:uppercase;">Máquinas</label>
+    <div class="maquinas-row" style="margin-top:4px;">${maquinas}</div></div>
+    ${os.obs ? `<div style="margin-top:10px;font-size:13px;color:var(--muted);">📌 ${os.obs}</div>` : ''}
+  `;
+
+  // Preselecionar máquina se só tem uma
+  if ((os.maquinas || []).length === 1) {
+    document.getElementById('maquinaSel').value = os.maquinas[0];
+  }
+
+  // Atualizar resumo valor OS
+  document.getElementById('resumoValorOS').textContent =
+    os.valor_total ? 'R$ ' + os.valor_total.toLocaleString('pt-BR', {minimumFractionDigits:2}) : 'R$ —';
+
+  document.getElementById('stepBusca').classList.add('hidden');
+  document.getElementById('stepLancamento').classList.remove('hidden');
+  await carregarInsumosOS();
+}
+
+function voltarBusca() {
+  osSelecionada = null;
+  document.getElementById('stepLancamento').classList.add('hidden');
+  document.getElementById('stepBusca').classList.remove('hidden');
+  document.getElementById('buscaOS').value = '';
+  filtrarOS();
+}
+
+// ================================================
+// INSUMOS CATÁLOGO
+// ================================================
+async function carregarInsumosCatalogo() {
+  const { data } = await sb.from('insumos').select('*').order('categoria').order('nome');
+  todosInsumos = data || [];
+}
+
+function preencherSelectInsumos() {
+  const sel = document.getElementById('insumoSel');
+  const ativos = todosInsumos.filter(i => i.ativo !== false);
+  const grupos = {};
+  ativos.forEach(i => {
+    if (!grupos[i.categoria]) grupos[i.categoria] = [];
+    grupos[i.categoria].push(i);
+  });
+  const catNomes = { chapa:'Chapas', vinil:'Vinil / Impressão', perfil:'Perfis / Estrutura', led:'LED / Elétrica', outros:'Outros' };
+  sel.innerHTML = '<option value="">Selecione o insumo...</option>';
+  Object.entries(grupos).forEach(([cat, items]) => {
+    const og = document.createElement('optgroup');
+    og.label = catNomes[cat] || cat;
+    items.forEach(i => {
+      const opt = document.createElement('option');
+      opt.value = i.id;
+      opt.dataset.unidade = i.unidade;
+      opt.dataset.custo = i.custo_unitario || 0;
+      opt.textContent = `${i.nome} (${i.unidade})`;
+      og.appendChild(opt);
+    });
+    sel.appendChild(og);
+  });
+}
+
+function preencherUnidade() {
+  const sel = document.getElementById('insumoSel');
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt.value) { document.getElementById('unidadeHint').textContent = '—'; return; }
+  document.getElementById('unidadeHint').textContent = `Unidade: ${opt.dataset.unidade}`;
+  document.getElementById('custoInput').value = parseFloat(opt.dataset.custo).toFixed(2);
+  calcularCusto();
+}
+
+function calcularCusto() {
+  const qtd = parseFloat(document.getElementById('qtdInput').value) || 0;
+  const custo = parseFloat(document.getElementById('custoInput').value) || 0;
+  const total = qtd * custo;
+  const preview = document.getElementById('custoPreview');
+  if (qtd > 0 && custo > 0) {
+    preview.style.display = 'block';
+    preview.textContent = `💰 Custo total: R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
+// ================================================
+// LANÇAR INSUMO
+// ================================================
+async function lancarInsumo() {
+  const insumoId = document.getElementById('insumoSel').value;
+  const maquina = document.getElementById('maquinaSel').value;
+  const qtd = parseFloat(document.getElementById('qtdInput').value);
+  const custo = parseFloat(document.getElementById('custoInput').value) || 0;
+  const obs = document.getElementById('obsInput').value.trim();
+
+  if (!insumoId) { showToast('Selecione um insumo', 'error'); return; }
+  if (!maquina) { showToast('Selecione a máquina', 'error'); return; }
+  if (!qtd || qtd <= 0) { showToast('Informe a quantidade', 'error'); return; }
+
+  const btn = document.getElementById('btnLancar');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Salvando...';
+
+  const { error } = await sb.from('os_insumos').insert({
+    os_id: osSelecionada.id,
+    insumo_id: insumoId,
+    maquina: maquina,
+    quantidade: qtd,
+    custo_unitario: custo,
+    observacao: obs || null,
+    lancado_por: currentUser.id
+  });
+
+  btn.disabled = false;
+  btn.innerHTML = '➕ Adicionar Insumo';
+
+  if (error) { showToast('Erro ao salvar: ' + error.message, 'error'); return; }
+
+  // Limpar form
+  document.getElementById('insumoSel').value = '';
+  document.getElementById('maquinaSel').value = '';
+  document.getElementById('qtdInput').value = '';
+  document.getElementById('custoInput').value = '';
+  document.getElementById('obsInput').value = '';
+  document.getElementById('custoPreview').style.display = 'none';
+  document.getElementById('unidadeHint').textContent = '—';
+
+  showToast('Insumo lançado com sucesso! ✅', 'success');
+  await carregarInsumosOS();
+}
+
+// ================================================
+// CARREGAR INSUMOS DA OS
+// ================================================
+async function carregarInsumosOS() {
+  if (!osSelecionada) return;
+
+  const { data } = await sb.from('os_insumos')
+    .select(`*, insumos(nome, unidade), profiles(nome)`)
+    .eq('os_id', osSelecionada.id)
+    .order('created_at');
+
+  const el = document.getElementById('tabelaInsumosOS');
+
+  if (!data || !data.length) {
+    el.innerHTML = `<div class="empty-state"><div class="icon">📋</div><p>Nenhum insumo lançado ainda.</p></div>`;
+    atualizarResumo(0, 0);
+    return;
+  }
+
+  const totalCusto = data.reduce((acc, i) => acc + (parseFloat(i.custo_total) || 0), 0);
+  atualizarResumo(totalCusto, data.length);
+
+  const podeExcluir = currentRole !== 'operador' ||
+    data.some(i => i.lancado_por === currentUser.id);
+
+  el.innerHTML = `
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Insumo</th>
+            <th>Máquina</th>
+            <th>Qtd</th>
+            <th>Custo Unit.</th>
+            <th>Total</th>
+            <th>Operador</th>
+            <th>Obs</th>
+            ${currentRole !== 'operador' ? '<th></th>' : ''}
+          </tr>
+        </thead>
+        <tbody>
+          ${data.map(i => `
+            <tr>
+              <td><strong>${i.insumos?.nome || '—'}</strong></td>
+              <td><span class="maquina-tag tag-${i.maquina || ''}">${i.maquina || '—'}</span></td>
+              <td>${parseFloat(i.quantidade).toLocaleString('pt-BR', {maximumFractionDigits:3})} ${i.insumos?.unidade || ''}</td>
+              <td>R$ ${parseFloat(i.custo_unitario).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
+              <td><strong>R$ ${parseFloat(i.custo_total || 0).toLocaleString('pt-BR', {minimumFractionDigits:2})}</strong></td>
+              <td>${i.profiles?.nome || '—'}</td>
+              <td style="color:var(--muted);font-size:12px;">${i.observacao || ''}</td>
+              ${currentRole !== 'operador' ? `<td><button class="btn btn-danger btn-sm" onclick="excluirInsumo('${i.id}')">🗑</button></td>` : ''}
+            </tr>
+          `).join('')}
+        </tbody>
+        <tfoot>
+          <tr class="total-row">
+            <td colspan="${currentRole !== 'operador' ? '4' : '4'}">TOTAL</td>
+            <td colspan="${currentRole !== 'operador' ? '4' : '3'}">
+              R$ ${totalCusto.toLocaleString('pt-BR', {minimumFractionDigits:2})}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>`;
+}
+
+function atualizarResumo(totalCusto, qtd) {
+  document.getElementById('resumoCustoInsumos').textContent =
+    'R$ ' + totalCusto.toLocaleString('pt-BR', {minimumFractionDigits:2});
+  document.getElementById('resumoQtdInsumos').textContent = qtd;
+
+  const valorOS = parseFloat(osSelecionada?.valor_total) || 0;
+  if (valorOS > 0) {
+    const margem = valorOS - totalCusto;
+    const pct = ((margem / valorOS) * 100).toFixed(1);
+    document.getElementById('resumoMargem').textContent =
+      `R$ ${margem.toLocaleString('pt-BR', {minimumFractionDigits:2})} (${pct}%)`;
+    document.getElementById('resumoMargem').style.color =
+      margem >= 0 ? 'var(--success)' : '#e53e3e';
+  }
+}
+
+async function excluirInsumo(id) {
+  if (!confirm('Remover este insumo?')) return;
+  await sb.from('os_insumos').delete().eq('id', id);
+  showToast('Insumo removido.', 'success');
+  await carregarInsumosOS();
+}
+
+// ================================================
+// CATÁLOGO — CRUD
+// ================================================
+function filtrarCatalogo() {
+  const busca = document.getElementById('buscaCatalogo').value.toLowerCase();
+  const cat = document.getElementById('filtroCategoria').value;
+  const filtrados = todosInsumos.filter(i => {
+    const matchBusca = !busca || i.nome.toLowerCase().includes(busca);
+    const matchCat = !cat || i.categoria === cat;
+    const matchAtivo = filtroAtivo === null || i.ativo === filtroAtivo;
+    return matchBusca && matchCat && matchAtivo;
+  });
+  renderCatalogo(filtrados);
+}
+
+function filtrarAtivo(el, valor) {
+  document.querySelectorAll('.filter-pills .pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  filtroAtivo = valor;
+  filtrarCatalogo();
+}
+
+function renderCatalogo(lista) {
+  const el = document.getElementById('catalogoGrid');
+  if (!lista.length) {
+    el.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="icon">🔍</div><p>Nenhum insumo encontrado.</p></div>`;
+    return;
+  }
+  const catNomes = { chapa:'Chapas', vinil:'Vinil', perfil:'Perfil', led:'LED', outros:'Outros' };
+  el.innerHTML = lista.map(i => `
+    <div class="catalogo-item ${!i.ativo ? 'inativo' : ''}">
+      <div class="cat-nome">${i.nome}</div>
+      <span class="categoria-badge cat-${i.categoria}">${catNomes[i.categoria] || i.categoria}</span>
+      <div class="cat-info">Unidade: ${i.unidade} · ${i.ativo ? '✅ Ativo' : '⛔ Inativo'}</div>
+      <div class="cat-custo">R$ ${parseFloat(i.custo_unitario || 0).toLocaleString('pt-BR', {minimumFractionDigits:2})} / ${i.unidade}</div>
+      <div class="cat-actions">
+        <button class="btn btn-secondary btn-sm" onclick="editarInsumo('${i.id}')">✏️ Editar</button>
+        <button class="btn btn-${i.ativo ? 'danger' : 'success'} btn-sm"
+          onclick="toggleAtivo('${i.id}', ${i.ativo})">
+          ${i.ativo ? '⛔' : '✅'}
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function abrirModalInsumo() {
+  editandoInsumoId = null;
+  document.getElementById('modalTitulo').textContent = 'Novo Insumo';
+  document.getElementById('mNome').value = '';
+  document.getElementById('mCategoria').value = 'chapa';
+  document.getElementById('mUnidade').value = 'm²';
+  document.getElementById('mCusto').value = '';
+  document.getElementById('mAtivo').value = 'true';
+  document.getElementById('modalInsumo').classList.add('open');
+}
+
+function editarInsumo(id) {
+  const ins = todosInsumos.find(i => i.id === id);
+  editandoInsumoId = id;
+  document.getElementById('modalTitulo').textContent = 'Editar Insumo';
+  document.getElementById('mNome').value = ins.nome;
+  document.getElementById('mCategoria').value = ins.categoria;
+  document.getElementById('mUnidade').value = ins.unidade;
+  document.getElementById('mCusto').value = ins.custo_unitario || 0;
+  document.getElementById('mAtivo').value = String(ins.ativo !== false);
+  document.getElementById('modalInsumo').classList.add('open');
+}
+
+function fecharModal() {
+  document.getElementById('modalInsumo').classList.remove('open');
+}
+
+async function salvarInsumo() {
+  const nome = document.getElementById('mNome').value.trim();
+  const categoria = document.getElementById('mCategoria').value;
+  const unidade = document.getElementById('mUnidade').value;
+  const custo = parseFloat(document.getElementById('mCusto').value) || 0;
+  const ativo = document.getElementById('mAtivo').value === 'true';
+
+  if (!nome) { showToast('Informe o nome do insumo', 'error'); return; }
+
+  const btn = document.getElementById('btnSalvarModal');
+  btn.disabled = true;
+
+  const payload = { nome, categoria, unidade, custo_unitario: custo, ativo };
+  let error;
+
+  if (editandoInsumoId) {
+    ({ error } = await sb.from('insumos').update(payload).eq('id', editandoInsumoId));
+  } else {
+    ({ error } = await sb.from('insumos').insert(payload));
+  }
+
+  btn.disabled = false;
+
+  if (error) { showToast('Erro: ' + error.message, 'error'); return; }
+
+  showToast(editandoInsumoId ? 'Insumo atualizado! ✅' : 'Insumo criado! ✅', 'success');
+  fecharModal();
+  await carregarInsumosCatalogo();
+  preencherSelectInsumos();
+  filtrarCatalogo();
+}
+
+async function toggleAtivo(id, atual) {
+  await sb.from('insumos').update({ ativo: !atual }).eq('id', id);
+  await carregarInsumosCatalogo();
+  filtrarCatalogo();
+  showToast(atual ? 'Insumo desativado.' : 'Insumo ativado. ✅', 'success');
+}
+
+// ================================================
+// TOAST
+// ================================================
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ================================================
+// START
+// ================================================
+init();
+</script>
+</body>
+</html>
