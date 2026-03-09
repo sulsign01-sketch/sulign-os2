@@ -2,59 +2,48 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Sul Sign Group · Gestão OS</title>
-  <meta name="description" content="Sistema de Gestão de Ordens de Serviço — Sul Sign Group"/>
-  <!-- Favicon inline -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+  <meta name="theme-color" content="#090909"/>
+  <title>Sul Sign · OS</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><rect width=%2232%22 height=%2232%22 rx=%226%22 fill=%22%232EDD4E%22/><text y=%2224%22 x=%224%22 font-size=%2224%22 font-weight=%22900%22 font-family=%22Arial%22 fill=%22%23000%22>S</text></svg>"/>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { background:#090909; font-family:Arial,sans-serif; color:#E0E0E0; }
+    body { background:#090909; font-family:Arial,sans-serif; color:#E0E0E0; -webkit-font-smoothing:antialiased; }
     #root { min-height:100vh; }
-    /* Custom scrollbar */
-    ::-webkit-scrollbar { width:6px; height:6px; }
+    ::-webkit-scrollbar { width:4px; height:4px; }
     ::-webkit-scrollbar-track { background:#111; }
     ::-webkit-scrollbar-thumb { background:#2EDD4E44; border-radius:3px; }
-    ::-webkit-scrollbar-thumb:hover { background:#2EDD4E88; }
-    /* Select options dark */
     option { background:#161616; color:#E0E0E0; }
+    .header-mob { display:none !important; }
+    @media (max-width: 1024px) {
+      .kanban-grid { grid-template-columns: repeat(3,1fr) !important; }
+      .maq-grid    { grid-template-columns: repeat(2,1fr) !important; }
+    }
+    @media (max-width: 768px) {
+      .header-mob  { display:flex !important; }
+      .header-nav  { display:none !important; }
+      .kanban-grid { grid-template-columns: 1fr !important; }
+      .maq-grid    { grid-template-columns: 1fr !important; }
+      .kpi-grid    { grid-template-columns: 1fr 1fr !important; }
+      .form-grid   { grid-template-columns: 1fr !important; }
+    }
   </style>
 </head>
 <body>
   <div id="root"></div>
-
-  <!-- React + ReactDOM -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <!-- Babel standalone for JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
   <script type="text/babel" data-presets="react">
-  // ── Globals from CDN ────────────────────────────────────────────────────
   const { useState, useEffect, useRef, useCallback } = React;
-
-  // ── window.storage polyfill (localStorage) ──────────────────────────────
   window.storage = {
-    get: (key) => {
-      try {
-        const v = localStorage.getItem("sulsign_" + key);
-        return v ? Promise.resolve({ value: v }) : Promise.reject(new Error("not found"));
-      } catch(e) { return Promise.reject(e); }
-    },
-    set: (key, value) => {
-      try {
-        localStorage.setItem("sulsign_" + key, value);
-        return Promise.resolve({ value });
-      } catch(e) { return Promise.reject(e); }
-    },
-    delete: (key) => {
-      try {
-        localStorage.removeItem("sulsign_" + key);
-        return Promise.resolve({ deleted: true });
-      } catch(e) { return Promise.reject(e); }
-    },
+    get: k => { try { const v=localStorage.getItem("ss_"+k); return v?Promise.resolve({value:v}):Promise.reject(new Error("nf")); }catch(e){return Promise.reject(e);} },
+    set: (k,v) => { try{localStorage.setItem("ss_"+k,v);return Promise.resolve({value:v})}catch(e){return Promise.reject(e)} },
+    delete: k => { try{localStorage.removeItem("ss_"+k);return Promise.resolve({deleted:true})}catch(e){return Promise.reject(e)} },
   };
-
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SUPABASE CONFIG — credenciais da Sul Sign Group
@@ -92,9 +81,10 @@ const PAYS     = ["PIX","Cartão 3X","Cartão 12X","Transferência","Boleto","50
 
 // Todos os 4 usuários são Gerente com acesso total
 const ROLE_CONFIG = {
-  gerente: { label:"Gerente", canFinancial:true, canDelete:true, canClientes:true, canCreateOS:true, canUpdateStatus:true },
-  operador:{ label:"Operador",canFinancial:false,canDelete:false,canClientes:false,canCreateOS:false,canUpdateStatus:true  },
-  socio:   { label:"Sócio",   canFinancial:true, canDelete:false,canClientes:true, canCreateOS:false,canUpdateStatus:false },
+  gerente:     { label:"Gerente",     color:"#2EDD4E", canFinancial:true,  canDelete:true,  canClientes:true,  canCreateOS:true,  canUpdateStatus:true  },
+  operador:    { label:"Operador",    color:"#4DAAFF", canFinancial:false, canDelete:false, canClientes:false, canCreateOS:false, canUpdateStatus:true  },
+  programador: { label:"Programador", color:"#B44FFF", canFinancial:false, canDelete:false, canClientes:false, canCreateOS:false, canUpdateStatus:true  },
+  socio:       { label:"Sócio",       color:"#FFD600", canFinancial:true,  canDelete:false, canClientes:true,  canCreateOS:false, canUpdateStatus:false },
 };
 const can = (role, perm) => ROLE_CONFIG[role]?.[perm] ?? false;
 
@@ -165,6 +155,18 @@ const FinancialValue = ({ value, label, color=C.orange, size=14, bold=false }) =
           {revealed?"🙈":"👁"}
         </button>
       )}
+    
+      {/* Mobile bottom nav */}
+      <div className="header-mob" style={{position:"fixed",bottom:0,left:0,right:0,background:C.card,borderTop:`1px solid ${C.greenBorder}`,display:"flex",zIndex:200,paddingBottom:"env(safe-area-inset-bottom)"}}>
+        {[["kanban","📊","OSs"],["lista","📋","Lista"],["maquinas","⚙️","Máquinas"],["clientes","👥","Clientes"],["nova","➕","Nova OS"]].map(([v,i,l])=>(
+          <button key={v} onClick={()=>{setEditOS(null);setView(v);}} style={{flex:1,padding:"10px 4px 8px",border:"none",background:"transparent",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,color:view===v?C.green:C.textSub,fontFamily:"inherit"}}>
+            <span style={{fontSize:19}}>{i}</span>
+            <span style={{fontSize:9,fontWeight:700,letterSpacing:0.3}}>{l}</span>
+            {view===v&&<span style={{width:18,height:2,background:C.green,borderRadius:1,marginTop:1}}/>}
+          </button>
+        ))}
+      </div>
+      <div className="header-mob" style={{height:72}}/>
     </div>
   );
 };
@@ -231,6 +233,18 @@ const KPI = ({icon,label,value,sub,color=C.green,masked=false})=>{
         {masked&&<button onClick={()=>setRev(r=>!r)} style={{background:"none",border:"none",cursor:"pointer",color:rev?C.green:C.textSub,fontSize:13}} title={rev?"Ocultar":"Visualizar"}>{rev?"🙈":"👁"}</button>}
       </div>
       {sub&&<div style={{fontSize:11,color:C.textSub,marginTop:3}}>{sub}</div>}
+    
+      {/* Mobile bottom nav */}
+      <div className="header-mob" style={{position:"fixed",bottom:0,left:0,right:0,background:C.card,borderTop:`1px solid ${C.greenBorder}`,display:"flex",zIndex:200,paddingBottom:"env(safe-area-inset-bottom)"}}>
+        {[["kanban","📊","OSs"],["lista","📋","Lista"],["maquinas","⚙️","Máquinas"],["clientes","👥","Clientes"],["nova","➕","Nova OS"]].map(([v,i,l])=>(
+          <button key={v} onClick={()=>{setEditOS(null);setView(v);}} style={{flex:1,padding:"10px 4px 8px",border:"none",background:"transparent",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,color:view===v?C.green:C.textSub,fontFamily:"inherit"}}>
+            <span style={{fontSize:19}}>{i}</span>
+            <span style={{fontSize:9,fontWeight:700,letterSpacing:0.3}}>{l}</span>
+            {view===v&&<span style={{width:18,height:2,background:C.green,borderRadius:1,marginTop:1}}/>}
+          </button>
+        ))}
+      </div>
+      <div className="header-mob" style={{height:72}}/>
     </div>
   );
 };
@@ -240,7 +254,7 @@ const KPI = ({icon,label,value,sub,color=C.green,masked=false})=>{
 // ═══════════════════════════════════════════════════════════════════════════
 const LoginScreen = ({onLogin})=>{
   const [email,setEmail]=useState(""); const [pass,setPass]=useState(""); const [err,setErr]=useState(""); const [loading,setLoading]=useState(false);
-  const users=[{email:"carlos@sulsign.com",label:"Carlos Augusto"},{email:"fernando@sulsign.com",label:"Fernando Jovita"},{email:"edson@sulsign.com",label:"Edson"},{email:"max@sulsign.com",label:"Max"}];
+  const users=[{email:"carlos@sulsign.com",label:"Carlos Augusto",role:"gerente"},{email:"fernando@sulsign.com",label:"Fernando Jovita",role:"gerente"},{email:"edson@sulsign.com",label:"Edson · Operador",role:"operador"},{email:"max@sulsign.com",label:"Max · Programador",role:"programador"},{email:"teste@sulsign.com",label:"Teste",role:"gerente"}];
   const doLogin=async()=>{ setLoading(true);setErr(""); try{ await onLogin(email,pass); }catch(e){ setErr(e.message||"Erro ao autenticar"); } setLoading(false); };
   return(
     <div style={{minHeight:"100vh",background:C.bg,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Arial"}}>
@@ -271,6 +285,18 @@ const LoginScreen = ({onLogin})=>{
           Primeira vez: execute o SQL de criação de usuários no Supabase
         </div>
       </div>
+    
+      {/* Mobile bottom nav */}
+      <div className="header-mob" style={{position:"fixed",bottom:0,left:0,right:0,background:C.card,borderTop:`1px solid ${C.greenBorder}`,display:"flex",zIndex:200,paddingBottom:"env(safe-area-inset-bottom)"}}>
+        {[["kanban","📊","OSs"],["lista","📋","Lista"],["maquinas","⚙️","Máquinas"],["clientes","👥","Clientes"],["nova","➕","Nova OS"]].map(([v,i,l])=>(
+          <button key={v} onClick={()=>{setEditOS(null);setView(v);}} style={{flex:1,padding:"10px 4px 8px",border:"none",background:"transparent",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,color:view===v?C.green:C.textSub,fontFamily:"inherit"}}>
+            <span style={{fontSize:19}}>{i}</span>
+            <span style={{fontSize:9,fontWeight:700,letterSpacing:0.3}}>{l}</span>
+            {view===v&&<span style={{width:18,height:2,background:C.green,borderRadius:1,marginTop:1}}/>}
+          </button>
+        ))}
+      </div>
+      <div className="header-mob" style={{height:72}}/>
     </div>
   );
 };
@@ -309,6 +335,18 @@ const OSCard = ({os,onClick,onStatusChange,role})=>{
         <div style={{fontSize:10,color:overdue?C.red:C.textSub}}>{overdue?"⚠️ ":"📅 "}{fmtDate(os.prazo)||"Sem prazo"}</div>
         {can(role,"canFinancial")&&os.valor_total&&<FinancialValue value={saldo} size={12} bold={false} color={saldo>0?C.orange:C.green}/>}
       </div>
+    
+      {/* Mobile bottom nav */}
+      <div className="header-mob" style={{position:"fixed",bottom:0,left:0,right:0,background:C.card,borderTop:`1px solid ${C.greenBorder}`,display:"flex",zIndex:200,paddingBottom:"env(safe-area-inset-bottom)"}}>
+        {[["kanban","📊","OSs"],["lista","📋","Lista"],["maquinas","⚙️","Máquinas"],["clientes","👥","Clientes"],["nova","➕","Nova OS"]].map(([v,i,l])=>(
+          <button key={v} onClick={()=>{setEditOS(null);setView(v);}} style={{flex:1,padding:"10px 4px 8px",border:"none",background:"transparent",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,color:view===v?C.green:C.textSub,fontFamily:"inherit"}}>
+            <span style={{fontSize:19}}>{i}</span>
+            <span style={{fontSize:9,fontWeight:700,letterSpacing:0.3}}>{l}</span>
+            {view===v&&<span style={{width:18,height:2,background:C.green,borderRadius:1,marginTop:1}}/>}
+          </button>
+        ))}
+      </div>
+      <div className="header-mob" style={{height:72}}/>
     </div>
   );
 };
@@ -319,7 +357,7 @@ const OSCard = ({os,onClick,onStatusChange,role})=>{
 const KanbanView = ({oss,role,onOpen,onStatusChange,search})=>{
   const f=oss.filter(o=>{const q=search.toLowerCase();return !q||`${o.num} ${o.cliente_nome} ${o.produto} ${o.descricao||""}`.toLowerCase().includes(q);});
   return(
-    <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10}}>
+    <div className="kanban-grid" style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10}}>
       {STATUS_LIST.map(s=>{
         const col=f.filter(o=>o.status===s);const sc=SC[s];
         return(
@@ -335,6 +373,18 @@ const KanbanView = ({oss,role,onOpen,onStatusChange,search})=>{
           </div>
         );
       })}
+    
+      {/* Mobile bottom nav */}
+      <div className="header-mob" style={{position:"fixed",bottom:0,left:0,right:0,background:C.card,borderTop:`1px solid ${C.greenBorder}`,display:"flex",zIndex:200,paddingBottom:"env(safe-area-inset-bottom)"}}>
+        {[["kanban","📊","OSs"],["lista","📋","Lista"],["maquinas","⚙️","Máquinas"],["clientes","👥","Clientes"],["nova","➕","Nova OS"]].map(([v,i,l])=>(
+          <button key={v} onClick={()=>{setEditOS(null);setView(v);}} style={{flex:1,padding:"10px 4px 8px",border:"none",background:"transparent",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,color:view===v?C.green:C.textSub,fontFamily:"inherit"}}>
+            <span style={{fontSize:19}}>{i}</span>
+            <span style={{fontSize:9,fontWeight:700,letterSpacing:0.3}}>{l}</span>
+            {view===v&&<span style={{width:18,height:2,background:C.green,borderRadius:1,marginTop:1}}/>}
+          </button>
+        ))}
+      </div>
+      <div className="header-mob" style={{height:72}}/>
     </div>
   );
 };
@@ -345,8 +395,8 @@ const KanbanView = ({oss,role,onOpen,onStatusChange,search})=>{
 const ListaView = ({oss,role,onOpen,search})=>{
   const f=oss.filter(o=>{const q=search.toLowerCase();return !q||`${o.num} ${o.cliente_nome} ${o.produto}`.toLowerCase().includes(q);});
   return(
-    <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
-      <table style={{width:"100%",borderCollapse:"collapse"}}>
+    <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,overflowX:"auto"}}>
+      <table style={{width:"100%",minWidth:700,borderCollapse:"collapse"}}>
         <thead><tr style={{background:C.card2}}>
           {["Nº OS","Cliente","Produto","Status","Prazo","Máquinas",...(can(role,"canFinancial")?["Total","Saldo"]:[""]),""].map((h,i)=>(
             <th key={i} style={{padding:"10px 13px",color:C.green,fontSize:10,fontWeight:800,textAlign:"left",letterSpacing:1.2,textTransform:"uppercase",borderBottom:`1px solid ${C.border}`}}>{h}</th>
@@ -375,6 +425,18 @@ const ListaView = ({oss,role,onOpen,search})=>{
           {f.length===0&&<tr><td colSpan={10} style={{padding:"28px",textAlign:"center",color:C.textSub}}>Nenhuma OS encontrada</td></tr>}
         </tbody>
       </table>
+    
+      {/* Mobile bottom nav */}
+      <div className="header-mob" style={{position:"fixed",bottom:0,left:0,right:0,background:C.card,borderTop:`1px solid ${C.greenBorder}`,display:"flex",zIndex:200,paddingBottom:"env(safe-area-inset-bottom)"}}>
+        {[["kanban","📊","OSs"],["lista","📋","Lista"],["maquinas","⚙️","Máquinas"],["clientes","👥","Clientes"],["nova","➕","Nova OS"]].map(([v,i,l])=>(
+          <button key={v} onClick={()=>{setEditOS(null);setView(v);}} style={{flex:1,padding:"10px 4px 8px",border:"none",background:"transparent",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,color:view===v?C.green:C.textSub,fontFamily:"inherit"}}>
+            <span style={{fontSize:19}}>{i}</span>
+            <span style={{fontSize:9,fontWeight:700,letterSpacing:0.3}}>{l}</span>
+            {view===v&&<span style={{width:18,height:2,background:C.green,borderRadius:1,marginTop:1}}/>}
+          </button>
+        ))}
+      </div>
+      <div className="header-mob" style={{height:72}}/>
     </div>
   );
 };
@@ -383,7 +445,7 @@ const ListaView = ({oss,role,onOpen,search})=>{
 // MÁQUINAS VIEW
 // ═══════════════════════════════════════════════════════════════════════════
 const MaquinasView = ({oss,onOpen})=>(
-  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
+  <div className="maq-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
     {MACHINES.map((m,i)=>{
       const color=MCOLORS[i];const mOSs=oss.filter(o=>Array.isArray(o.maquinas)&&o.maquinas.includes(m)&&o.status!=="Entregue");
       return(
@@ -445,8 +507,8 @@ const ClientesView = ({db,oss})=>{
         <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍  Buscar cliente..." style={{flex:1,background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:"9px 13px",color:C.text,fontSize:14,fontFamily:"inherit",outline:"none"}}/>
         <Btn onClick={()=>{setForm({});setEdit("new");}}>+ Novo Cliente</Btn>
       </div>
-      <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
-        <table style={{width:"100%",borderCollapse:"collapse"}}>
+      <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,overflowX:"auto"}}>
+        <table style={{width:"100%",minWidth:480,borderCollapse:"collapse"}}>
           <thead><tr style={{background:C.card2}}>
             {["Nome","Contato","Telefone","Email","OSs",""].map(h=><th key={h} style={{padding:"9px 13px",color:C.green,fontSize:10,fontWeight:800,textAlign:"left",letterSpacing:1.2,textTransform:"uppercase",borderBottom:`1px solid ${C.border}`}}>{h}</th>)}
           </tr></thead>
@@ -466,6 +528,18 @@ const ClientesView = ({db,oss})=>{
           </tbody>
         </table>
       </div>
+    
+      {/* Mobile bottom nav */}
+      <div className="header-mob" style={{position:"fixed",bottom:0,left:0,right:0,background:C.card,borderTop:`1px solid ${C.greenBorder}`,display:"flex",zIndex:200,paddingBottom:"env(safe-area-inset-bottom)"}}>
+        {[["kanban","📊","OSs"],["lista","📋","Lista"],["maquinas","⚙️","Máquinas"],["clientes","👥","Clientes"],["nova","➕","Nova OS"]].map(([v,i,l])=>(
+          <button key={v} onClick={()=>{setEditOS(null);setView(v);}} style={{flex:1,padding:"10px 4px 8px",border:"none",background:"transparent",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,color:view===v?C.green:C.textSub,fontFamily:"inherit"}}>
+            <span style={{fontSize:19}}>{i}</span>
+            <span style={{fontSize:9,fontWeight:700,letterSpacing:0.3}}>{l}</span>
+            {view===v&&<span style={{width:18,height:2,background:C.green,borderRadius:1,marginTop:1}}/>}
+          </button>
+        ))}
+      </div>
+      <div className="header-mob" style={{height:72}}/>
     </div>
   );
 };
@@ -496,7 +570,7 @@ const OSForm = ({initial,allOSs,clientes,db,role,user,onSave,onCancel,onDelete})
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18,paddingBottom:14,borderBottom:`1px solid ${C.greenBorder}`}}>
         <div>
           <div style={{fontSize:17,fontWeight:900,color:C.green}}>{isNew?"Nova Ordem de Serviço":`OS ${os.num} — ${os.cliente_nome||""}`}</div>
-          <div style={{fontSize:10,color:C.textSub,marginTop:3,letterSpacing:1}}>{ROLE_CONFIG[role]?.label?.toUpperCase()} · {user?.nome}</div>
+          <div style={{fontSize:10,color:ROLE_CONFIG[role]?.color||C.green,marginTop:3,letterSpacing:1,fontWeight:700}}>{ROLE_CONFIG[role]?.label?.toUpperCase()} · {user?.nome}</div>
         </div>
         <div style={{display:"flex",gap:8}}>
           {!isNew&&can(role,"canDelete")&&<Btn variant="danger" small onClick={onDelete}>🗑 Excluir</Btn>}
@@ -510,7 +584,7 @@ const OSForm = ({initial,allOSs,clientes,db,role,user,onSave,onCancel,onDelete})
       <div style={{display:"flex",flexDirection:"column",gap:20}}>
         {/* 1. Identificação */}
         <div><SH icon="📋" title="1. Identificação"/>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
+          <div className="form-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
             <DInput label="Nº OS" value={os.num} onChange={v=>set("num",v)} required/>
             <DInput label="Abertura" value={os.abertura} onChange={v=>set("abertura",v)} type="date"/>
             <DInput label="Prazo de Entrega" value={os.prazo} onChange={v=>set("prazo",v)} type="date"/>
@@ -521,14 +595,14 @@ const OSForm = ({initial,allOSs,clientes,db,role,user,onSave,onCancel,onDelete})
         </div>
         {/* 2. Cliente */}
         <div><SH icon="👤" title="2. Cliente" color={C.blue}/>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
+          <div className="form-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
             <DSelect label="Cliente cadastrado" value={os.cliente_id} onChange={v=>{set("cliente_id",v);const c=clientes.find(x=>x.id===v);if(c)set("cliente_nome",c.nome);}} options={clientes.map(c=>({value:c.id,label:c.nome}))} col={2}/>
             <DInput label="Ou digitar nome" value={os.cliente_nome} onChange={v=>{set("cliente_nome",v);set("cliente_id","");}} placeholder="Direto na OS"/>
           </div>
         </div>
         {/* 3. Produto */}
         <div><SH icon="🔧" title="3. Produto / Projeto" color={C.orange}/>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
+          <div className="form-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
             <DSelect label="Tipo de Produto" value={os.produto} onChange={v=>set("produto",v)} options={PRODUCTS} required/>
             <DInput label="Descrição / Texto Visual" value={os.descricao} onChange={v=>set("descricao",v)} col={2} placeholder="Ex: BISTRO GOURMET – 12 letras caixa"/>
             <DInput label="Altura (cm)" value={os.dim_h} onChange={v=>set("dim_h",v)} placeholder="H"/>
@@ -581,7 +655,7 @@ const OSForm = ({initial,allOSs,clientes,db,role,user,onSave,onCancel,onDelete})
               <span style={{color:C.orange,fontWeight:800,fontSize:11,letterSpacing:1.5,textTransform:"uppercase"}}>6. Financeiro</span>
               <span style={{fontSize:10,color:C.textSub,marginLeft:"auto"}}>👁 Clique nos valores para revelar</span>
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
+            <div className="form-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
               <DInput label="Valor Total (R$)" value={os.valor_total} onChange={v=>set("valor_total",v)} type="number"/>
               <DInput label="Entrada Recebida (R$)" value={os.entrada} onChange={v=>set("entrada",v)} type="number"/>
               <div style={{display:"flex",flexDirection:"column",gap:4}}>
@@ -616,6 +690,18 @@ const OSForm = ({initial,allOSs,clientes,db,role,user,onSave,onCancel,onDelete})
           <Btn onClick={handleSave} disabled={saving}>{saving?"Salvando...":"✓ Salvar OS"}</Btn>
         </div>
       </div>
+    
+      {/* Mobile bottom nav */}
+      <div className="header-mob" style={{position:"fixed",bottom:0,left:0,right:0,background:C.card,borderTop:`1px solid ${C.greenBorder}`,display:"flex",zIndex:200,paddingBottom:"env(safe-area-inset-bottom)"}}>
+        {[["kanban","📊","OSs"],["lista","📋","Lista"],["maquinas","⚙️","Máquinas"],["clientes","👥","Clientes"],["nova","➕","Nova OS"]].map(([v,i,l])=>(
+          <button key={v} onClick={()=>{setEditOS(null);setView(v);}} style={{flex:1,padding:"10px 4px 8px",border:"none",background:"transparent",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,color:view===v?C.green:C.textSub,fontFamily:"inherit"}}>
+            <span style={{fontSize:19}}>{i}</span>
+            <span style={{fontSize:9,fontWeight:700,letterSpacing:0.3}}>{l}</span>
+            {view===v&&<span style={{width:18,height:2,background:C.green,borderRadius:1,marginTop:1}}/>}
+          </button>
+        ))}
+      </div>
+      <div className="header-mob" style={{height:72}}/>
     </div>
   );
 };
@@ -677,20 +763,20 @@ function App(){
           <div style={{width:30,height:30,background:C.green,borderRadius:7,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,fontWeight:900,color:"#000",boxShadow:C.greenGlow}}>S</div>
           <div><div style={{color:C.green,fontWeight:900,fontSize:13,letterSpacing:1.5}}>SUL SIGN GROUP</div><div style={{color:C.textSub,fontSize:9,letterSpacing:2}}>GESTÃO OPERACIONAL</div></div>
         </div>
-        <div style={{display:"flex",gap:1}}>
+        <div className="header-nav" style={{display:"flex",gap:1}}>
           {[["kanban","📊","Kanban"],["lista","📋","Lista"],["maquinas","⚙️","Máquinas"],["clientes","👥","Clientes"]].map(([v,i,l])=>(
             <button key={v} onClick={()=>setView(v)} style={{padding:"6px 12px",border:"none",borderRadius:6,cursor:"pointer",fontSize:11,fontWeight:view===v?800:500,background:view===v?C.greenBg:"transparent",color:view===v?C.green:C.textSub,borderBottom:view===v?`2px solid ${C.green}`:"2px solid transparent",fontFamily:"inherit"}}>{i} {l}</button>
           ))}
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <div style={{textAlign:"right"}}><div style={{fontSize:12,fontWeight:700,color:C.text}}>{session.nome}</div><div style={{fontSize:9,color:C.green,letterSpacing:1}}>{ROLE_CONFIG[role]?.label?.toUpperCase()}</div></div>
+          <div style={{textAlign:"right"}}><div style={{fontSize:12,fontWeight:700,color:C.text}}>{session.nome}</div><div style={{fontSize:9,color:ROLE_CONFIG[role]?.color||C.green,letterSpacing:1,fontWeight:800}}>{ROLE_CONFIG[role]?.label?.toUpperCase()}</div></div>
           <button onClick={()=>{setEditOS(null);setView("nova");}} style={{padding:"6px 14px",background:C.green,color:"#000",border:"none",borderRadius:7,cursor:"pointer",fontWeight:800,fontSize:12,boxShadow:C.greenGlow}}>+ Nova OS</button>
           <button onClick={handleLogout} style={{padding:"6px 11px",background:"transparent",color:C.textSub,border:`1px solid ${C.border}`,borderRadius:7,cursor:"pointer",fontSize:10}}>Sair</button>
         </div>
       </div>
-      <div style={{padding:"16px 20px"}}>
+      <div style={{padding:"16px 14px"}}>
         {/* KPIs */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:11,marginBottom:16}}>
+        <div className="kpi-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:11,marginBottom:16}}>
           <KPI icon="📋" label="OSs em Aberto" value={totalAberto} sub={`de ${oss.length} total`} color={C.blue}/>
           <KPI icon="💰" label="A Receber" value={fmt(totalSaldo)} sub="Saldo pendente" color={C.orange} masked/>
           <KPI icon="⚠️" label="Vencidas" value={vencidas} sub="Prazo ultrapassado" color={vencidas>0?C.red:C.green}/>
@@ -708,12 +794,22 @@ function App(){
         {view==="maquinas"&&<MaquinasView oss={oss} onOpen={o=>{setEditOS(o);setView("edit");}}/>}
         {view==="clientes"&&<ClientesView db={db} oss={oss}/>}
       </div>
+    
+      {/* Mobile bottom nav */}
+      <div className="header-mob" style={{position:"fixed",bottom:0,left:0,right:0,background:C.card,borderTop:`1px solid ${C.greenBorder}`,display:"flex",zIndex:200,paddingBottom:"env(safe-area-inset-bottom)"}}>
+        {[["kanban","📊","OSs"],["lista","📋","Lista"],["maquinas","⚙️","Máquinas"],["clientes","👥","Clientes"],["nova","➕","Nova OS"]].map(([v,i,l])=>(
+          <button key={v} onClick={()=>{setEditOS(null);setView(v);}} style={{flex:1,padding:"10px 4px 8px",border:"none",background:"transparent",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,color:view===v?C.green:C.textSub,fontFamily:"inherit"}}>
+            <span style={{fontSize:19}}>{i}</span>
+            <span style={{fontSize:9,fontWeight:700,letterSpacing:0.3}}>{l}</span>
+            {view===v&&<span style={{width:18,height:2,background:C.green,borderRadius:1,marginTop:1}}/>}
+          </button>
+        ))}
+      </div>
+      <div className="header-mob" style={{height:72}}/>
     </div>
   );
 }
 
-
-  // ── Mount ────────────────────────────────────────────────────────────────
   const root = ReactDOM.createRoot(document.getElementById("root"));
   root.render(<App/>);
   </script>
